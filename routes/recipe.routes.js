@@ -4,37 +4,59 @@ const Recipe = require("../models/Recipe.model");
 const Chef = require("../models/Chef.model");
 const Ingredient = require("../models/Ingredient.model");
 
-// CREATE
-router.post("/recipes", (req, res) => {
-  Recipe.create(req.body)
-    .then((newRecipe) => {
-      // ********************************* push new recipe into the chef -> recipes array
-      // 1. --> find chef by id in chef collection, update chef recipes array with pushing the new recipe id
-      Chef.findByIdAndUpdate(req.body.chef, {
-        $push: { recipes: newRecipe._id },
-      })
-        .then(() => {
-          console.log("recipe added to chef.");
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-      return newRecipe;
-    })
-    // ********************************* MANY TO MANY
-    // 2. --> find all ingredients by id in ingredients collection, update recipes array with pushing the new recipe id
-    .then((newRecipe) => {
-      return Ingredient.updateMany(
-        { _id: { $in: req.body.ingredients } },
-        { $push: { recipes: newRecipe._id } }
-      );
-    })
-    .then((result) => {
-      res.json(result);
-    })
-    .catch((err) => {
-      console.log(err);
+// // CREATE .then()
+// router.post("/recipes", (req, res) => {
+//   Recipe.create(req.body)
+//     .then((newRecipe) => {
+//       // ********************************* push new recipe into the chef -> recipes array
+//       // 1. --> find chef by id in chef collection, update chef recipes array with pushing the new recipe id
+//       Chef.findByIdAndUpdate(req.body.chef, {
+//         $push: { recipes: newRecipe._id },
+//       })
+//         .then(() => {
+//           console.log("recipe added to chef.");
+//         })
+//         .catch((err) => {
+//           console.log(err);
+//         });
+//       return newRecipe;
+//     })
+//     // ********************************* MANY TO MANY
+//     // 2. --> find all ingredients by id in ingredients collection, update recipes array with pushing the new recipe id
+//     .then((newRecipe) => {
+//       return Ingredient.updateMany(
+//         { _id: { $in: req.body.ingredients } },
+//         { $push: { recipes: newRecipe._id } }
+//       );
+//     })
+//     .then((result) => {
+//       res.json(result);
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//     });
+// });
+
+// CREATE WITH ASYNC / AWAIT
+router.post("/recipes", async (req, res) => {
+  try {
+    // 1. create new recipe
+    const newRecipe = await Recipe.create(req.body);
+    // 2. update chef
+    const updatedChef = await Chef.findByIdAndUpdate(req.body.chef, {
+      $push: { recipes: newRecipe._id },
     });
+    console.log("recipe added to chef.");
+    // 3. update ingredients
+    const updatedIngredients = await Ingredient.updateMany(
+      { _id: { $in: req.body.ingredients } },
+      { $push: { recipes: newRecipe._id } }
+    );
+    // send back data
+    res.json(newRecipe);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // READ

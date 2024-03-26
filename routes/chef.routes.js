@@ -35,4 +35,13 @@ router.get("/chefs/:id", (req, res) => {
     .catch((err) => console.log(err));
 });
 
+// ********************************* UPDATE new recipes - only -
+router.put("/chefs/:id", (req, res) => {
+  Chef.findByIdAndUpdate(req.params.id, { $push: { recipes: req.body.recipes}})
+    .then((chefData) => {
+      res.json(chefData);
+    })
+    .catch((err) => console.log(err));
+});
+
 module.exports = router;
